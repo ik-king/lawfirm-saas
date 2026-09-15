@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Justitia Law Firm SaaS - اليمن</title>
+    <script src="https://tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen pb-10">
+
+    <!-- شاشة الدخول وإنشاء حساب المحامي الجديد -->
+    <div id="auth-screen" class="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-blue-900">Justitia Pro v4.0 💼</h1>
+            <p class="text-gray-500 text-sm mt-1">منصة المحاماة اليمنية الذكية - 3 أيام تجريبية مجاناً</p>
+        </div>
+        <div class="space-y-4">
+            <input id="username" type="text" placeholder="اسم المستخدم للمكتب" class="w-full p-3 border rounded-lg text-right focus:outline-blue-900">
+            <input id="password" type="password" placeholder="كلمة مرور الحساب" class="w-full p-3 border rounded-lg text-right focus:outline-blue-900">
+            <button onclick="handleAuth('login')" class="w-full bg-blue-900 hover:bg-blue-950 text-white p-3 rounded-lg font-bold transition">تسجيل الدخول</button>
+            <button onclick="handleAuth('register')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-lg font-bold transition">إنشاء حساب جديد للمكتب (مجاناً)</button>
+        </div>
+    </div>
+
+    <!-- لوحة التحكم الرئيسية المتجاوبة مع الجوال -->
+    <div id="main-app" class="hidden max-w-xl mx-auto px-4 mt-6">
+
+        <!-- جدار الحظر والاشتراك المالي المعدل لليمن (Paywall) -->
+        <div id="paywall" class="hidden bg-amber-50 border-2 border-amber-500 rounded-xl p-6 text-center my-4 shadow-sm">
+            <h2 class="text-xl font-bold text-amber-800">🛑 الحساب مقفل! انتهت صلاحية التطبيق</h2>
+            <p class="text-gray-600 my-2 text-xs">لقد انتهت الفترة التجريبية المجانية. يرجى سداد الاشتراك الشهري لمتابعة حفظ قضايا عملائك ومراجعة الميزانيات القانونية.</p>
+            <div class="bg-white p-4 rounded-lg border my-3 font-bold text-xl text-emerald-600">قيمة الاشتراك: 1,000 ريال يمني / شهرياً</div>
+
+            <!-- تعليمات الدفع الحقيقية لليمن -->
+            <div class="bg-gray-100 p-3 rounded-lg border text-right text-xs text-gray-700 mb-4 space-y-1">
+                <p class="font-bold text-blue-900 text-sm mb-1">💰 طرق السداد المتاحة للتفعيل:</p>
+                <p>🔹 <b>حساب الكريمي:</b> 12345678 (باسم: إدارة تطبيق جستس)</p>
+                <p>🔹 <b>محفظة جيب (Kuraimi Pay):</b> 77xxxxxxx</p>
+                <p>🔹 <b>محافظ (فلوسك / كاش):</b> تحويل مباشر للرقم 77xxxxxxx</p>
+                <p class="text-amber-700 font-bold mt-1">⚠️ بعد تحويل الـ 1,000 ريال، اضغط على تأكيد السداد بالأسفل للتفعيل الفوري.</p>
+            </div>
+            <button onclick="triggerPayment()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold p-3 rounded-lg text-lg transition shadow">💳 تأكيد السداد وتفعيل الحساب فوراً</button>
+        </div>
+
+        <!-- محتوى التطبيق الفعلي للمحامين -->
+        <div id="app-content" class="space-y-6">
+            <div class="flex justify-between items-center bg-blue-900 text-white p-4 rounded-xl shadow-md">
+                <span id="welcome-msg" class="font-bold text-sm">مكتب المحاماة الرقمي ⚖️</span>
+                <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded transition">خروج</button>
+            </div>
+
+            <!-- نموذج إضافة ملف قضية -->
+            <div class="bg-white p-5 rounded-xl shadow border space-y-3 text-right">
+                <h3 class="font-bold text-blue-900 border-b pb-2">➕ تسجيل موكل وقضية جديدة</h3>
+                <input id="c-name" type="text" placeholder="اسم الموكل كاملاً" class="w-full p-2 border rounded-lg text-sm">
+                <input id="c-phone" type="text" placeholder="رقم هاتف الموكل" class="w-full p-2 border rounded-lg text-sm">
+                <input id="c-id" type="text" placeholder="رقم الهوية الوطنية / جواز السفر" class="w-full p-2 border rounded-lg text-sm">
+                <textarea id="c-case" placeholder="تفاصيل ومعطيات النزاع القانوني للتحليل التلقائي..." class="w-full p-2 border rounded-lg h-20 text-sm"></textarea>
+                <div class="grid grid-cols-3 gap-2">
+                    <input id="c-date" type="text" placeholder="تاريخ الجلسة القادمة" class="p-2 border rounded-lg text-xs">
+                    <input id="c-total" type="number" placeholder="إجمالي الأتعاب" class="p-2 border rounded-lg text-xs">
+                    <input id="c-paid" type="number" placeholder="المبلغ المقدم" class="p-2 border rounded-lg text-xs">
+                </div>
+                <button onclick="addNewClient()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold p-2.5 rounded-lg text-sm transition">حفظ السجل الشامل للموكل وتصنيف الملف</button>
+            </div>
+
+            <!-- أرشيف وجداول المكتب المالي والقانوني -->
+            <div class="bg-white p-5 rounded-xl shadow border text-right">
+                <h3 class="font-bold text-blue-900 mb-3 border-b pb-2">📁 أرشيف القضايا والحسابات والذمم المالية</h3>
+                <div id="clients-list" class="space-y-3">
+                    <!-- تعبئة السجلات آلياً -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // نظام إدارة داخلي سحابي يحاكي عمل السيرفر بالكامل باستخدام التخزين المحلي الآمن
+        let lawyers = JSON.parse(localStorage.getItem("saas_lawyers")) || {};
+        let clients = JSON.parse(localStorage.getItem("saas_clients")) || [];
+        let loggedInUser = localStorage.getItem("current_user") || null;
+
+        if (loggedInUser) { checkSubscription(); showApp(); }
+
+        function handleAuth(type) {
+            const user = document.getElementById("username").value.trim();
+            const pass = document.getElementById("password").value.trim();
+            if(!user || !pass) return alert("فضلاً املأ كافة الحقول!");
+
+            if (type === 'register') {
+                if (lawyers[user]) return alert("اسم المستخدم هذا مسجل مسبقاً!");
+                let trialEnd = new Date();
+                trialEnd.setDate(trialEnd.getDate() + 3); // 3 أيام تجريبية
+                lawyers[user] = { password: pass, premium_until: trialEnd.toISOString() };
+                localStorage.setItem("saas_lawyers", JSON.stringify(lawyers));
+                alert("تم إنشاء حساب مكتبك بنجاح! لديك 3 أيام تجريبية مجانية.");
+            }
+
+            if (!lawyers[user] || lawyers[user].password !== pass) {
+                return alert("بيانات الدخول غير صحيحة!");
+            }
+
+            localStorage.setItem("current_user", user);
+            loggedInUser = user;
+            checkSubscription();
+            showApp();
+        }
+
+        function checkSubscription() {
+            if (!loggedInUser) return;
+            let expiry = new Date(lawyers[loggedInUser].premium_until);
+            let now = new Date();
+            if (now > expiry) {
+                handlePaywall(true);
+            } else {
+                handlePaywall(false);
+            }
+        }
+
+        function showApp() {
+            document.getElementById("auth-screen").classList.add("hidden");
+            document.getElementById("main-app").classList.remove("hidden");
+            document.getElementById("welcome-msg").innerText = `مكتب المحاماة: ${loggedInUser} ⚖️`;
+            fetchClientsArchive();
+        }
+
+        function handlePaywall(expired) {
+            if(expired) {
+                document.getElementById("paywall").classList.remove("hidden");
+                document.getElementById("app-content").classList.add("pointer-events-none", "opacity-30");
+            } else {
+                document.getElementById("paywall").classList.add("hidden");
+                document.getElementById("app-content").classList.remove("pointer-events-none", "opacity-100");
+            }
+        }
+
+        function addNewClient() {
+            let name = document.getElementById("c-name").value;
+            let caseText = document.getElementById("c-case").value;
+            if(!name || !caseText) return alert("يرجى كتابة اسم الموكل وتفاصيل القضية!");
+
+            let total = parseFloat(document.getElementById("c-total").value || 0);
+            let paid = parseFloat(document.getElementById("c-paid").value || 0);
+
+            let newClient = {
+                lawyer: loggedInUser,
+                name: name,
+                phone: document.getElementById("c-phone").value,
+                id_num: document.getElementById("c-id").value,
+                case_text: caseText,
+                session_date: document.getElementById("c-date").value || "غير محدد",
+                total_fees: total,
+                paid_amount: paid,
+                remaining_amount: total - paid
+            };
+
+            clients.push(newClient);
+            localStorage.setItem("saas_clients", JSON.stringify(clients));
+            alert("تم حفظ السجل وتحديث الحساب المالي بنجاح!");
+            fetchClientsArchive();
+
+            // تفريغ الحقول
+            document.getElementById("c-name").value = ""; document.getElementById("c-phone").value = "";
+            document.getElementById("c-id").value = ""; document.getElementById("c-case").value = "";
+            document.getElementById("c-date").value = ""; document.getElementById("c-total").value = ""; document.getElementById("c-paid").value = "";
+        }
+
+        function fetchClientsArchive() {
+            const container = document.getElementById("clients-list");
+            container.innerHTML = "";
+
+            let myClients = clients.filter(c => c.lawyer === loggedInUser);
+            if(myClients.length === 0) {
+                container.innerHTML = "<p class='text-gray-400 text-center text-xs py-4'>لا يوجد موكلين مسجلين في أرشيف مكتبك حالياً.</p>";
+                return;
+            }
+
