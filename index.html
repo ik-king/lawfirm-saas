@@ -89,7 +89,7 @@
             if (type === 'register') {
                 if (lawyers[user]) return alert("اسم المستخدم هذا مسجل مسبقاً!");
                 let trialEnd = new Date();
-                trialEnd.setDate(trialEnd.getDate() + 3); // 3 أيام تجريبية
+                trialEnd.setDate(trialEnd.getDate() + 3); // 3 أيام تجريبية مجانية
                 lawyers[user] = { password: pass, premium_until: trialEnd.toISOString() };
                 localStorage.setItem("saas_lawyers", JSON.stringify(lawyers));
                 alert("تم إنشاء حساب مكتبك بنجاح! لديك 3 أيام تجريبية مجانية.");
