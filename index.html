@@ -24,20 +24,20 @@
 
     <!-- لوحة التحكم الرئيسية المتجاوبة مع الجوال -->
     <div id="main-app" class="hidden max-w-xl mx-auto px-4 mt-6">
-
+        
         <!-- جدار الحظر والاشتراك المالي المعدل لليمن (Paywall) -->
         <div id="paywall" class="hidden bg-amber-50 border-2 border-amber-500 rounded-xl p-6 text-center my-4 shadow-sm">
             <h2 class="text-xl font-bold text-amber-800">🛑 الحساب مقفل! انتهت صلاحية التطبيق</h2>
             <p class="text-gray-600 my-2 text-xs">لقد انتهت الفترة التجريبية المجانية. يرجى سداد الاشتراك الشهري لمتابعة حفظ قضايا عملائك ومراجعة الميزانيات القانونية.</p>
             <div class="bg-white p-4 rounded-lg border my-3 font-bold text-xl text-emerald-600">قيمة الاشتراك: 1,000 ريال يمني / شهرياً</div>
-
-            <!-- تعليمات الدفع الحقيقية لليمن -->
+            
+            <!-- تعليمات الدفع الحقيقية لليمن برقم هاتفك المحدث -->
             <div class="bg-gray-100 p-3 rounded-lg border text-right text-xs text-gray-700 mb-4 space-y-1">
                 <p class="font-bold text-blue-900 text-sm mb-1">💰 طرق السداد المتاحة للتفعيل:</p>
-                <p>🔹 <b>حساب الكريمي:</b> 12345678 (باسم: إدارة تطبيق جستس)</p>
-                <p>🔹 <b>محفظة جيب (Kuraimi Pay):</b> 77xxxxxxx</p>
-                <p>🔹 <b>محافظ (فلوسك / كاش):</b> تحويل مباشر للرقم 77xxxxxxx</p>
-                <p class="text-amber-700 font-bold mt-1">⚠️ بعد تحويل الـ 1,000 ريال، اضغط على تأكيد السداد بالأسفل للتفعيل الفوري.</p>
+                <p>🔹 <b>محفظة جيب (Kuraimi Pay):</b> تحويل مباشر إلى الرقم: <span class="font-bold text-blue-800 text-sm">779797571</span></p>
+                <p>🔹 <b>محافظ (فلوسك / كاش / جوالي):</b> تحويل مباشر للرقم: <span class="font-bold text-blue-800 text-sm">779797571</span></p>
+                <p>🔹 <b>حساب الكريمي أو النجم:</b> تواصل معنا عبر الواتساب لتزويدك برقم الحساب الحالي.</p>
+                <p class="text-amber-700 font-bold mt-1">⚠️ بعد تحويل الـ 1,000 ريال يمني، يرجى التواصل مع الإدارة لتفعيل حسابك فوراً.</p>
             </div>
             <button onclick="triggerPayment()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold p-3 rounded-lg text-lg transition shadow">💳 تأكيد السداد وتفعيل الحساب فوراً</button>
         </div>
@@ -75,7 +75,6 @@
     </div>
 
     <script>
-        // نظام إدارة داخلي سحابي يحاكي عمل السيرفر بالكامل باستخدام التخزين المحلي الآمن
         let lawyers = JSON.parse(localStorage.getItem("saas_lawyers")) || {};
         let clients = JSON.parse(localStorage.getItem("saas_clients")) || [];
         let loggedInUser = localStorage.getItem("current_user") || null;
@@ -159,7 +158,6 @@
             alert("تم حفظ السجل وتحديث الحساب المالي بنجاح!");
             fetchClientsArchive();
 
-            // تفريغ الحقول
             document.getElementById("c-name").value = ""; document.getElementById("c-phone").value = "";
             document.getElementById("c-id").value = ""; document.getElementById("c-case").value = "";
             document.getElementById("c-date").value = ""; document.getElementById("c-total").value = ""; document.getElementById("c-paid").value = "";
@@ -168,10 +166,7 @@
         function fetchClientsArchive() {
             const container = document.getElementById("clients-list");
             container.innerHTML = "";
-
+            
             let myClients = clients.filter(c => c.lawyer === loggedInUser);
             if(myClients.length === 0) {
                 container.innerHTML = "<p class='text-gray-400 text-center text-xs py-4'>لا يوجد موكلين مسجلين في أرشيف مكتبك حالياً.</p>";
-                return;
-            }
-
