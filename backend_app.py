@@ -5,9 +5,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="Justitia Law Firm SaaS API")
+app = FastAPI(title="Justitia Law Firm SaaS API - Free Version")
 
-# تفعيل الـ CORS لتتمكن واجهة الجوال من الاتصال بالسيرفر السحابي بأمان
+# تفعيل الـ CORS لتتمكن الواجهة من الاتصال بالسيرفر السحابي بأمان ومن أي IP
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,15 +22,12 @@ DB_PATH = "lawfirm_saas.db"
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    # جدول حسابات المحامين والاشتراكات لليمن
+    # جدول حسابات المحامين (تم إزالة أعمدة الاشتراك والتواريخ المؤقتة)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS lawyers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE,
-        password TEXT,
-        trial_start TEXT,
-        premium_until TEXT,
-        status TEXT
+        password TEXT
     )
     """)
     # جدول الموكلين والقضايا والحسابات المالية والذمم
@@ -72,68 +69,55 @@ class ClientData(BaseModel):
     paid_amount: float
 
 
-# بوابات التحقق والاشتراك التجاري لليمن
+# بوابة إنشاء حساب محامي جديد - مجاني ومفتوح للأبد
 @app.post("/api/register")
 def register_lawyer(auth: LawyerAuth):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    now = datetime.datetime.now()
-    # منح المحامي فترة تجريبية مجانية لمدة 3 أيام من تاريخ تسجيله
-    trial_end = now + datetime.timedelta(days=3)
-
     try:
         cursor.execute(
-            "INSERT INTO lawyers (username, password, trial_start, premium_until, status) VALUES (?, ?, ?, ?, ?)",
-            (auth.username, auth.password, now.isoformat(), trial_end.isoformat(), "trial")
+            "INSERT INTO lawyers (username, password) VALUES (?, ?)",
+            (auth.username, auth.password)
         )
         conn.commit()
         lawyer_id = cursor.lastrowid
-        return {"status": "success", "lawyer_id": lawyer_id,
-                "message": "تم إنشاء حسابك بنجاح! لديك 3 أيام تجريبية مجانية للبرنامج."}
+        return {"status": "success", "lawyer_id": lawyer_id, "message": "تم إنشاء حساب مكتبك بنجاح وبشكل مجاني بالكامل!"}
     except sqlite3.IntegrityError:
         raise HTTPException(status_code=400, detail="اسم المستخدم هذا مسجل مسبقاً!")
     finally:
         conn.close()
 
 
+# بوابة تسجيل الدخول
 @app.post("/api/login")
 def login_lawyer(auth: LawyerAuth):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, premium_until FROM lawyers WHERE username=? AND password=?",
-                   (auth.username, auth.password))
+    cursor.execute("SELECT id FROM lawyers WHERE username=? AND password=?", (auth.username, auth.password))
     user = cursor.fetchone()
     conn.close()
 
     if not user:
         raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة!")
 
-    lawyer_id, premium_until = user
-    now = datetime.datetime.now()
-    is_expired = now > datetime.datetime.fromisoformat(premium_until)
-
     return {
         "status": "success",
-        "lawyer_id": lawyer_id,
-        "is_expired": is_expired,
-        "premium_until": premium_until
+        "lawyer_id": user[0]
     }
 
 
-# جدار الحماية وحظر البيانات والموكلين عند انتهاء الاشتراك الشهري
+# إضافة موكل وقضية جديدة مباشرة دون فحص اشتراك
 @app.post("/api/add-client")
 def add_client(client: ClientData):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT premium_until FROM lawyers WHERE id=?", (client.lawyer_id,))
+    # التحقق من وجود المحامي فقط
+    cursor.execute("SELECT id FROM lawyers WHERE id=?", (client.lawyer_id,))
     user = cursor.fetchone()
-    if not user: raise HTTPException(status_code=404, detail="المحامي غير مسجل")
-
-    now = datetime.datetime.now()
-    if now > datetime.datetime.fromisoformat(user[0]):
-        return {"status": "expired",
-                "message": "انتهت الفترة التجريبية! يرجى دفع الاشتراك الشهري (1,000 ريال يمني) لاستعادة الوصول."}
+    if not user: 
+        conn.close()
+        raise HTTPException(status_code=404, detail="المحامي غير مسجل")
 
     remaining = client.total_fees - client.paid_amount
     cursor.execute(
@@ -143,18 +127,14 @@ def add_client(client: ClientData):
     )
     conn.commit()
     conn.close()
-    return {"status": "success", "message": "تم حفظ بيانات الموكل وحساب الميزانية بنجاح"}
+    return {"status": "success", "message": "تم حفظ بيانات الموكل وحساب الميزانية في قاعدة البيانات بنجاح"}
 
 
+# جلب أرشيف القضايا الخاص بالمحامي
 @app.get("/api/clients/{lawyer_id}")
 def get_clients(lawyer_id: int):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-
-    cursor.execute("SELECT premium_until FROM lawyers WHERE id=?", (lawyer_id,))
-    premium_until = cursor.fetchone()
-    if datetime.datetime.now() > datetime.datetime.fromisoformat(premium_until[0]):
-        return {"status": "expired", "clients": []}
 
     cursor.execute(
         "SELECT name, phone, id_num, case_text, session_date, total_fees, paid_amount, remaining_amount FROM clients WHERE lawyer_id=?",
@@ -169,16 +149,3 @@ def get_clients(lawyer_id: int):
             "session_date": r[4], "total_fees": r[5], "paid_amount": r[6], "remaining_amount": r[7]
         })
     return {"status": "success", "clients": clients}
-
-
-# تمديد تلقائي وتجديد الاشتراك بعد تأكيد الدفع (1000 ريال يمني)
-@app.post("/api/renew-subscription/{lawyer_id}")
-def renew_sub(lawyer_id: int):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    new_premium = datetime.datetime.now() + datetime.timedelta(days=30)
-    cursor.execute("UPDATE lawyers SET premium_until=?, status='active' WHERE id=?",
-                   (new_premium.isoformat(), lawyer_id))
-    conn.commit()
-    conn.close()
-    return {"status": "success", "message": "تم تفعيل وتجديد حسابك بنجاح لمدة 30 يوماً!"}
