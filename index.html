@@ -3,37 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Justitia Law Firm SaaS - اليمن (نسخة مجانية دائمة)</title>
-    <!-- استدعاء مكتبة التنسيق لضمان عمل الواجهات والتجاوب مع الجوال -->
+    <title>Justitia Law Firm SaaS - اليمن</title>
     <script src="https://jsdelivr.net"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen pb-10">
 
-    <!-- شاشة الدخول وإنشاء حساب المحامي الجديد -->
+    <!-- شاشة الدخول وإنشاء الحساب -->
     <div id="auth-screen" class="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg border border-gray-200">
         <div class="text-center mb-6">
             <h1 class="text-2xl font-bold text-blue-900">Justitia Pro v4.0 💼</h1>
-            <p class="text-emerald-600 text-sm mt-1 font-bold">منصة المحاماة اليمنية الذكية - النسخة المجانية المفتوحة للأبد</p>
+            <p class="text-emerald-600 text-sm mt-1 font-bold">منصة المحاماة اليمنية الذكية - نظام التخزين السحابي الدائم</p>
         </div>
         <div class="space-y-4">
             <input id="username" type="text" placeholder="اسم المستخدم للمكتب" class="w-full p-3 border rounded-lg text-right focus:outline-blue-900">
             <input id="password" type="password" placeholder="كلمة مرور الحساب" class="w-full p-3 border rounded-lg text-right focus:outline-blue-900">
             <button onclick="handleAuth('login')" class="w-full bg-blue-900 hover:bg-blue-950 text-white p-3 rounded-lg font-bold transition cursor-pointer">تسجيل الدخول</button>
-            <button onclick="handleAuth('register')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-lg font-bold transition cursor-pointer">إنشاء حساب جديد للمكتب (مجاناً بالكامل)</button>
+            <button onclick="handleAuth('register')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-lg font-bold transition cursor-pointer">إنشاء حساب جديد للمكتب (مجاناً)</button>
         </div>
     </div>
 
-    <!-- لوحة التحكم الرئيسية المتجاوبة مع الجوال -->
+    <!-- لوحة التحكم الرئيسية -->
     <div id="main-app" class="hidden max-w-xl mx-auto px-4 mt-6">
-        
-        <!-- محتوى التطبيق الفعلي للمحامين -->
-        <div id="app-content" class="space-y-6 opacity-100">
+        <div id="app-content" class="space-y-6">
             <div class="flex justify-between items-center bg-blue-900 text-white p-4 rounded-xl shadow-md">
                 <span id="welcome-msg" class="font-bold text-sm">مكتب المحاماة الرقمي ⚖️</span>
                 <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded transition cursor-pointer">خروج</button>
             </div>
 
-            <!-- نموذج إضافة ملف قضية -->
+            <!-- نموذج إضافة قضية -->
             <div class="bg-white p-5 rounded-xl shadow border space-y-3 text-right">
                 <h3 class="font-bold text-blue-900 border-b pb-2">➕ تسجيل موكل وقضية جديدة</h3>
                 <input id="c-name" type="text" placeholder="اسم الموكل كاملاً" class="w-full p-2 border rounded-lg text-sm">
@@ -45,24 +42,23 @@
                     <input id="c-total" type="number" placeholder="إجمالي الأتعاب" class="p-2 border rounded-lg text-xs">
                     <input id="c-paid" type="number" placeholder="المبلغ المقدم" class="p-2 border rounded-lg text-xs">
                 </div>
-                <button onclick="addNewClient()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold p-2.5 rounded-lg text-sm transition cursor-pointer">حفظ السجل الشامل للموكل وتصنيف الملف</button>
+                <button onclick="addNewClient()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold p-2.5 rounded-lg text-sm transition cursor-pointer">حفظ السجل الشامل في السيرفر</button>
             </div>
 
-            <!-- أرشيف وجداول المكتب المالي والقانوني -->
+            <!-- أرشيف المكتب -->
             <div class="bg-white p-5 rounded-xl shadow border text-right">
                 <h3 class="font-bold text-blue-900 mb-3 border-b pb-2">📁 أرشيف القضايا والحسابات والذمم المالية</h3>
-                <div id="clients-list" class="space-y-3">
-                    <!-- تعبئة السجلات آلياً من السيرفر -->
-                </div>
+                <div id="clients-list" class="space-y-3"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // ملاحظة: عند رفع الباك إند على استضافة أونلاين، استبدل الرابط المحلي بالرابط الجديد الخاص بالسيرفر.
-        const API_URL = "http://127.0.0.1:8000";
+        // السكربت يكتشف تلقائياً إذا كان يعمل محلياً أو سحابياً لمنع أي تضارب في الـ IP
+        const API_URL = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost" 
+            ? "http://127.0.0.1:8000" 
+            : window.location.origin.replace("github.io", "onrender.com"); // يربط تلقائياً برندر عند الرفع لجيت هاب
 
-        // التحقق من الجلسة المفتوحة مسبقاً
         let currentLawyerId = localStorage.getItem("lawyer_id");
         let loggedInUser = localStorage.getItem("current_user");
 
@@ -71,7 +67,6 @@
             fetchClientsArchive();
         }
 
-        // دالة تسجيل الدخول وإنشاء الحساب النظيفة
         async function handleAuth(type) {
             const user = document.getElementById("username").value.trim();
             const pass = document.getElementById("password").value.trim();
@@ -87,15 +82,8 @@
                 });
 
                 const data = await response.json();
+                if (!response.ok) return alert(data.detail || "خطأ في الاتصال بالخادم");
 
-                if (!response.ok) {
-                    return alert(data.detail || "حدث خطأ في النظام!");
-                }
-
-                if (type === 'register') {
-                    alert(data.message);
-                }
-                
                 localStorage.setItem("lawyer_id", data.lawyer_id);
                 localStorage.setItem("current_user", user);
                 currentLawyerId = data.lawyer_id;
@@ -103,26 +91,21 @@
 
                 showApp();
                 fetchClientsArchive();
-
             } catch (error) {
-                console.error("Error:", error);
-                alert("تعذر الاتصال بالسيرفر! تأكد من تشغيل الباك-إند.");
+                alert("السيرفر السحابي مغلق حالياً أو تحت الصيانة. يرجى التأكد من تشغيل ملف backend_app.py");
             }
         }
 
-        // دالة جلب أرشيف القضايا من قاعدة البيانات الثابتة
         async function fetchClientsArchive() {
             if (!currentLawyerId) return;
-
             try {
                 const response = await fetch(`${API_URL}/api/clients/${currentLawyerId}`);
                 const data = await response.json();
-
                 const listContainer = document.getElementById("clients-list");
                 listContainer.innerHTML = "";
 
                 if (!data.clients || data.clients.length === 0) {
-                    listContainer.innerHTML = `<p class="text-gray-400 text-center text-sm py-4">لا توجد قضايا مسجلة في الأرشيف حالياً.</p>`;
+                    listContainer.innerHTML = `<p class="text-gray-400 text-center text-sm py-4">لا توجد قضايا مسجلة حالياً.</p>`;
                     return;
                 }
 
@@ -144,16 +127,13 @@
                     `;
                     listContainer.appendChild(clientBox);
                 });
-
             } catch (error) {
-                console.error("Error fetching clients:", error);
+                console.error("Error:", error);
             }
         }
 
-        // دالة إضافة وحفظ موكل جديد بشكل دائم
         async function addNewClient() {
-            if (!currentLawyerId) return alert("انتهت الجلسة، يرجى تسجيل الدخول مجدداً.");
-
+            if (!currentLawyerId) return alert("انتهت الجلسة، أعد تسجيل الدخول.");
             const name = document.getElementById("c-name").value.trim();
             const phone = document.getElementById("c-phone").value.trim();
             const id_num = document.getElementById("c-id").value.trim();
@@ -162,26 +142,39 @@
             const total_fees = parseFloat(document.getElementById("c-total").value) || 0;
             const paid_amount = parseFloat(document.getElementById("c-paid").value) || 0;
 
-            if(!name || !phone || !case_text) return alert("فضلاً املأ الاسم، الهاتف، وتفاصيل القضية!");
-
-            const payload = {
-                lawyer_id: parseInt(currentLawyerId),
-                name, phone, id_num, case_text, session_date, total_fees, paid_amount
-            };
+            if(!name || !phone || !case_text) return alert("املاً الخانات الأساسية!");
 
             try {
                 const response = await fetch(`${API_URL}/api/add-client`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ lawyer_id: parseInt(currentLawyerId), name, phone, id_num, case_text, session_date, total_fees, paid_amount })
                 });
-
                 const data = await response.json();
                 alert(data.message);
                 
-                // تفريغ المدخلات بعد الحفظ
                 document.getElementById("c-name").value = "";
                 document.getElementById("c-phone").value = "";
                 document.getElementById("c-id").value = "";
                 document.getElementById("c-case").value = "";
                 document.getElementById("c-date").value = "";
+                document.getElementById("c-total").value = "";
+                document.getElementById("c-paid").value = "";
+                fetchClientsArchive();
+            } catch (error) {
+                alert("فشل حفظ البيانات بالسيرفر.");
+            }
+        }
+
+        function showApp() {
+            document.getElementById("auth-screen").classList.add("hidden");
+            document.getElementById("main-app").classList.remove("hidden");
+            document.getElementById("welcome-msg").innerText = `مكتب المحاماة: ${loggedInUser} ⚖️`;
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+    </script>
+</body>
